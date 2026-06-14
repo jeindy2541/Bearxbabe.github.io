@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ห้องดีเจออนไลน์ · เปิดเพลงด้วยกัน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08060f; --bg2:#100a1f; --panel:#150d26; --panel2:#1d1230;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
+    --text:#F1EBFF; --muted:#9a8fb8;
+    --pink:#FF3CAC; --cyan:#2DE2E6; --purple:#7B5CFF; --violet:#B14BFF;
+    --woot:#37E0B0; --meh:#FF4D6D; --grab:#FFC23D;
+    --track:rgba(255,255,255,.12);
+    --fd:'Chakra Petch',sans-serif; --fb:'Noto Sans Thai','Chakra Petch',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--fb);color:var(--text);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 480px at 12% -8%, rgba(255,60,172,.16), transparent 60%),
+      radial-gradient(900px 480px at 92% -4%, rgba(45,226,230,.14), transparent 60%),
+      var(--bg);}
+  .app{max-width:1240px;margin:0 auto;padding:18px 16px 56px}
+
+  /* topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .room-id{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-weight:700;letter-spacing:.5px;font-size:1rem}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;color:var(--pink);border:1px solid rgba(255,60,172,.4);padding:2px 8px;border-radius:20px;letter-spacing:1px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--pink);box-shadow:0 0 8px var(--pink);animation:blink 1.6s infinite}
+  @keyframes blink{50%{opacity:.3}}
+  .me{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line2);padding:7px 12px;border-radius:22px;font-size:.84rem;cursor:default}
+  .chip b{font-family:var(--fd)}
+  .chip.ppl b{color:var(--cyan)} .chip.pts b{color:var(--grab)}
+  .chip.act{cursor:pointer;transition:border-color .15s}.chip.act:hover{border-color:var(--purple)}
+
+  .layout{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+  @media(min-width:920px){ .layout{grid-template-columns:minmax(0,1.75fr) minmax(330px,1fr)} }
+
+  /* room */
+  .room{position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--line);
+    background:radial-gradient(130% 110% at 50% 0%, #221143 0%, #0c0818 62%);min-height:430px;aspect-ratio:16/10;display:flex;flex-direction:column;align-items:center}
+  .floor{position:absolute;left:-25%;right:-25%;bottom:-3%;height:60%;z-index:0;
+    background:repeating-linear-gradient(90deg, rgba(45,226,230,.20) 0 1px, transparent 1px 6.5%),repeating-linear-gradient(0deg, rgba(255,60,172,.16) 0 1px, transparent 1px 16%);
+    transform:perspective(440px) rotateX(60deg);transform-origin:bottom center;opacity:.5;-webkit-mask:linear-gradient(to top,#000 25%,transparent);mask:linear-gradient(to top,#000 25%,transparent)}
+  .lights{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .beam{position:absolute;top:-14%;left:50%;width:120px;height:128%;transform-origin:top center;filter:blur(16px);mix-blend-mode:screen;opacity:.5;clip-path:polygon(46% 0,54% 0,100% 100%,0 100%)}
+  .beam.b1{background:linear-gradient(to bottom,rgba(255,60,172,.7),transparent 68%);animation:sway1 7s ease-in-out infinite}
+  .beam.b2{background:linear-gradient(to bottom,rgba(45,226,230,.7),transparent 68%);animation:sway2 9s ease-in-out infinite}
+  .beam.b3{background:linear-gradient(to bottom,rgba(123,92,255,.7),transparent 68%);animation:sway3 8s ease-in-out infinite}
+  @keyframes sway1{0%,100%{transform:translateX(-50%) rotate(-22deg)}50%{transform:translateX(-50%) rotate(-6deg)}}
+  @keyframes sway2{0%,100%{transform:translateX(-50%) rotate(20deg)}50%{transform:translateX(-50%) rotate(4deg)}}
+  @keyframes sway3{0%,100%{transform:translateX(-50%) rotate(-4deg)}50%{transform:translateX(-50%) rotate(14deg)}}
+  .room-meta{position:absolute;top:12px;left:12px;z-index:5;display:flex;gap:8px}
+  .room-meta .tag{background:rgba(8,6,15,.55);border:1px solid var(--line2);backdrop-filter:blur(6px);font-size:.72rem;padding:4px 10px;border-radius:20px;color:var(--muted)}
+
+  .stack{position:relative;z-index:2;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;padding:30px 16px 10px}
+  .screen-frame{width:46%;max-width:372px;min-width:200px}
+  .screen{position:relative;aspect-ratio:16/9;border-radius:11px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.16);box-shadow:0 0 0 1px rgba(123,92,255,.45),0 0 46px rgba(123,92,255,.5),0 14px 40px rgba(0,0,0,.5)}
+  #yt-player,.screen iframe{width:100%;height:100%;border:0;display:block}
+  .screen-off{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--muted);font-size:.8rem;padding:0 18px;background:linear-gradient(180deg,#160d2b,#0a0714)}
+
+  .booth{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .dj{position:relative;width:40px;height:40px;display:flex;flex-direction:column;align-items:center}
+  .dj .head{width:22px;height:22px;border-radius:50%;background:#caa9ff;box-shadow:0 0 12px rgba(123,92,255,.8)}
+  .dj .hp{position:absolute;top:-3px;width:30px;height:18px;border:3px solid #e9e3ff;border-bottom:none;border-radius:30px 30px 0 0;opacity:.95}
+  .dj .ear{position:absolute;top:8px;width:7px;height:11px;border-radius:4px;background:#e9e3ff}.dj .ear.l{left:1px}.dj .ear.r{right:1px}
+  .dj .body{width:30px;height:18px;border-radius:10px 10px 7px 7px;background:#9a78ff;margin-top:-2px}
+  .dj-name{font-family:var(--fd);font-size:.68rem;color:#cdbcff;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .decks{display:flex;gap:18px;margin-top:2px}
+  .deck{width:30px;height:30px;border-radius:50%;background:conic-gradient(#1a1a22,#3a3550,#1a1a22);border:2px solid #0c0c12;position:relative;box-shadow:0 0 14px rgba(45,226,230,.25)}
+  .deck::after{content:"";position:absolute;inset:42%;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+  .deck.spin{animation:spin 1.5s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+  .crowd{margin-top:auto;width:100%;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:7px 10px;padding:0 8px 8px}
+  .av{display:flex;flex-direction:column;align-items:center;will-change:transform;animation:dance 1s ease-in-out infinite;transform-origin:bottom center}
+  .av .head{border-radius:50%}.av .body{border-radius:7px 7px 4px 4px;margin-top:1px}
+  @keyframes dance{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+  .crowd.paused .av{animation-play-state:paused}
+  .crowd.cheer .av{animation:jump .42s ease-in-out infinite}
+  @keyframes jump{0%,100%{transform:translateY(0)}40%{transform:translateY(-13px) scale(1.06)}}
+  .emotes{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+  .emote{position:absolute;bottom:18%;font-size:20px;will-change:transform,opacity;animation:rise 1.5s ease-out forwards}
+  @keyframes rise{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translateY(-180px) scale(1.15);opacity:0}}
+
+  /* now bar */
+  .nowbar{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .np-title{font-family:var(--fd);font-weight:600;font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .np-sub{font-size:.82rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .np-seek{display:flex;align-items:center;gap:10px;margin-top:13px}
+  .time{font-family:var(--fd);font-size:.74rem;color:var(--muted);min-width:38px}.time.end{text-align:right}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;cursor:pointer;margin:0}
+  input[type=range]:focus{outline:none}
+  input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:4px;background:linear-gradient(to right,var(--cyan) var(--p,0%),var(--track) var(--p,0%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;margin-top:-4.5px;border:0;box-shadow:0 0 8px var(--cyan)}
+  input[type=range]::-moz-range-track{height:5px;border-radius:4px;background:var(--track)}
+  input[type=range]::-moz-range-progress{height:5px;border-radius:4px;background:var(--cyan)}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#fff;box-shadow:0 0 8px var(--cyan)}
+  #seek{pointer-events:none;opacity:.85}
+
+  .np-actions{display:flex;align-items:center;gap:9px;margin-top:15px;flex-wrap:wrap}
+  .vote{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);cursor:pointer;border-radius:13px;padding:9px 14px;font-family:var(--fd);font-weight:600;font-size:.86rem;transition:transform .1s,box-shadow .15s,border-color .15s,color .15s}
+  .vote .ic{font-size:1.05rem;line-height:1}.vote b{font-family:var(--fd)}
+  .vote:active{transform:scale(.95)}
+  .vote.woot:hover,.vote.woot.lit{border-color:var(--woot);box-shadow:0 0 18px rgba(55,224,176,.4);color:var(--woot)}
+  .vote.meh:hover,.vote.meh.lit{border-color:var(--meh);box-shadow:0 0 18px rgba(255,77,109,.35);color:var(--meh)}
+  .vote.grab:hover,.vote.grab.lit{border-color:var(--grab);box-shadow:0 0 18px rgba(255,194,61,.4);color:var(--grab)}
+  .transport{display:flex;align-items:center;gap:7px;margin-left:auto}
+  .tbtn{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer;transition:background .15s,transform .1s}
+  .tbtn:hover{background:#271842}.tbtn:active{transform:scale(.93)}.tbtn svg{width:20px;height:20px}
+  .tbtn.play{background:linear-gradient(140deg,var(--purple),var(--violet));border:0;box-shadow:0 8px 22px -6px rgba(123,92,255,.6)}
+  .vol{max-width:96px}
+
+  /* side */
+  .side{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+  .tabs{display:flex;border-bottom:1px solid var(--line)}
+  .tab{flex:1;background:none;border:0;color:var(--muted);padding:13px 0;font-family:var(--fd);font-weight:600;font-size:.9rem;cursor:pointer;position:relative}
+  .tab.active{color:var(--text)}
+  .tab.active::after{content:"";position:absolute;left:18%;right:18%;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--pink),var(--cyan))}
+  .pane{padding:14px;display:flex;flex-direction:column;min-height:0}
+  #pane-chat{height:480px}
+  .chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding-right:4px}
+  .chat::-webkit-scrollbar{width:7px}.chat::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+  .msg{font-size:.86rem;line-height:1.4;word-break:break-word}
+  .msg .u{font-family:var(--fd);font-weight:600;margin-right:6px}
+  .msg.sys{color:var(--muted);font-style:italic;font-size:.8rem}
+  .chatbar{display:flex;gap:8px;margin-top:12px}
+  .chatbar input{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--line2);color:var(--text);border-radius:11px;padding:10px 12px;font-family:var(--fb);font-size:.88rem}
+  .chatbar input:focus{outline:none;border-color:var(--cyan)}
+  .chatbar button{border:0;cursor:pointer;border-radius:11px;padding:0 15px;font-family:var(--fd);font-weight:600;background:linear-gradient(140deg,var(--pink),var(--violet));color:#fff}
+
+  .addbar{display:flex;gap:8px;margin-bottom:12px}
+  .addbar input{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--line2);color:var(--text);border-radius:11px;padding:10px 12px;font-family:var(--fb);font-size:.88rem}
+  .addbar input:focus{outline:none;border-color:var(--cyan)}
+  .addbar input.shake{animation:shake .4s}@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .addbar button{border:0;cursor:pointer;border-radius:11px;padding:0 16px;font-family:var(--fd);font-weight:600;background:linear-gradient(140deg,var(--cyan),var(--purple));color:#08060f}
+  .subtabs{display:flex;gap:8px;margin-bottom:10px}
+  .subtab{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:6px 13px;font-size:.8rem;cursor:pointer;font-family:var(--fb)}
+  .subtab.active{color:var(--text);border-color:var(--purple)}.subtab span{font-family:var(--fd);opacity:.8}
+  .list{list-style:none;margin:0;padding:0;overflow-y:auto;max-height:360px}
+  .list::-webkit-scrollbar{width:7px}.list::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+  .track{display:flex;align-items:center;gap:10px;padding:7px;border-radius:11px;transition:background .12s;position:relative}
+  .track:hover{background:var(--panel2)}
+  .num{width:22px;flex:0 0 auto;text-align:center;font-family:var(--fd);font-size:.78rem;color:var(--muted);display:grid;place-items:center;height:16px}
+  .thumb{width:48px;height:36px;flex:0 0 auto;border-radius:7px;object-fit:cover;background:#000}
+  .meta{flex:1;min-width:0}
+  .t-title{display:block;font-size:.88rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t-by{display:block;font-family:var(--fd);font-size:.64rem;color:#6a6190;margin-top:1px}
+  .rm,.addq{flex:0 0 auto;border:0;background:none;cursor:pointer;width:28px;height:28px;border-radius:8px;font-size:.85rem;color:#4d4566;opacity:0;transition:opacity .12s,color .12s,background .12s}
+  .track:hover .rm,.track:hover .addq{opacity:1}
+  .rm:hover{color:var(--meh);background:rgba(255,77,109,.12)}.addq{color:var(--cyan)}.addq:hover{background:rgba(45,226,230,.14)}
+  .empty{text-align:center;color:var(--muted);font-size:.85rem;padding:30px 16px}.empty b{color:var(--text)}
+
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(18px);background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:11px 18px;border-radius:12px;font-size:.85rem;box-shadow:0 14px 38px -10px rgba(0,0,0,.7);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:80;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* overlays */
+  .overlay{position:fixed;inset:0;z-index:90;background:rgba(6,4,12,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px}
+  .panelbox{background:linear-gradient(180deg,#1a1030,#120b22);border:1px solid var(--line2);border-radius:20px;max-width:520px;width:100%;padding:26px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8)}
+  .panelbox h2{font-family:var(--fd);margin:0 0 4px;font-size:1.3rem}
+  .panelbox p{color:var(--muted);font-size:.9rem;margin:0 0 16px}
+  .panelbox ol{color:var(--text);font-size:.88rem;padding-left:20px;margin:0 0 16px}
+  .panelbox ol li{margin-bottom:8px}
+  .panelbox code{background:#0a0714;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.82rem}
+  .field{display:flex;gap:10px;margin-top:6px}
+  .field input{flex:1;background:#0a0714;border:1px solid var(--line2);color:var(--text);border-radius:12px;padding:13px 14px;font-family:var(--fb);font-size:1rem}
+  .field input:focus{outline:none;border-color:var(--cyan)}
+  .bigbtn{border:0;cursor:pointer;border-radius:12px;padding:0 22px;font-family:var(--fd);font-weight:700;font-size:1rem;background:linear-gradient(140deg,var(--pink),var(--violet));color:#fff}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:12px}
+  .hint a{color:var(--cyan)}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media(max-width:480px){.room{min-height:360px}.screen-frame{width:58%}.transport{margin-left:0;width:100%;justify-content:center;margin-top:4px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="room-id"><span class="live"><i></i>LIVE</span> <span id="roomName">ห้องเปิดเพลง</span></div>
+    <div class="me">
+      <span class="chip ppl">👥 <b id="pplCount">0</b> ในห้อง</span>
+      <span class="chip pts">★ <b id="points">0</b></span>
+      <span class="chip act" id="copyLink" title="คัดลอกลิงก์ห้อง">🔗 คัดลอกลิงก์</span>
+      <span class="chip act" id="handleChip" title="เปลี่ยนชื่อ">🎧 <b id="djName">…</b></span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <section class="room">
+        <div class="lights"><div class="beam b1"></div><div class="beam b2"></div><div class="beam b3"></div></div>
+        <div class="floor"></div>
+        <div class="room-meta"><span class="tag" id="syncTag">⏱ ซิงก์เรียลไทม์</span></div>
+        <div class="stack">
+          <div class="screen-frame"><div class="screen"><div id="yt-player"></div><div class="screen-off" id="screenOff">รอเพลงแรก… ใครก็ได้กดขอเพลงเลย 🎶</div></div></div>
+          <div class="booth">
+            <div class="dj"><div class="hp"></div><div class="ear l"></div><div class="ear r"></div><div class="head" id="djHead"></div><div class="body" id="djBody"></div></div>
+            <div class="dj-name" id="djLabel">รอดีเจ…</div>
+            <div class="decks"><div class="deck" id="deckL"></div><div class="deck" id="deckR"></div></div>
+          </div>
+          <div class="crowd paused" id="crowd"></div>
+        </div>
+        <div class="emotes" id="emotes"></div>
+      </section>
+
+      <section class="nowbar">
+        <div class="np-title" id="npTitle">ยังไม่มีเพลงเล่น</div>
+        <div class="np-sub" id="npSub">เพิ่มเพลงในคิวเพื่อเริ่มเล่น</div>
+        <div class="np-seek"><span class="time" id="curTime">0:00</span><input type="range" id="seek" min="0" max="0" value="0" step="1" tabindex="-1" aria-hidden="true"><span class="time end" id="durTime">0:00</span></div>
+        <div class="np-actions">
+          <button class="vote woot" id="btnWoot"><span class="ic">🙌</span>WOOT <b id="wootCount">0</b></button>
+          <button class="vote meh" id="btnMeh"><span class="ic">👎</span>MEH <b id="mehCount">0</b></button>
+          <button class="vote grab" id="btnGrab"><span class="ic">⭐</span>GRAB</button>
+          <div class="transport">
+            <button class="tbtn play" id="btnPlay" aria-label="เล่น/หยุด (เฉพาะเครื่องคุณ)"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></button>
+            <button class="tbtn" id="btnMute" aria-label="เสียง"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg></button>
+            <input type="range" id="vol" class="vol" min="0" max="100" value="80" aria-label="ระดับเสียง">
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <div class="tabs"><button class="tab active" data-tab="chat">แชต</button><button class="tab" data-tab="list">คิวเพลง</button></div>
+      <div class="pane" id="pane-chat">
+        <div class="chat" id="chat"></div>
+        <div class="chatbar"><input id="chatInput" type="text" placeholder="พิมพ์ในห้อง…" autocomplete="off" maxlength="180"><button id="chatSend">ส่ง</button></div>
+      </div>
+      <div class="pane" id="pane-list" hidden>
+        <div class="addbar"><input id="addInput" type="text" placeholder="วางลิงก์ YouTube เพื่อขอเพลง…" autocomplete="off" spellcheck="false"><button id="btnAdd">ขอเพลง</button></div>
+        <div class="subtabs"><button class="subtab active" data-sub="queue">คิว <span id="qCount">0</span></button><button class="subtab" data-sub="fav">⭐ บันทึก <span id="fCount">0</span></button></div>
+        <ul class="list" id="list"></ul>
+        <ul class="list" id="favList" hidden></ul>
+        <div class="empty" id="emptyQueue"><b>คิวยังว่าง</b><br>วางลิงก์ YouTube ด้านบนแล้วกด “ขอเพลง”</div>
+        <div class="empty" id="emptyFav" hidden><b>ยังไม่มีเพลงที่บันทึก</b><br>กด GRAB ตอนเพลงเล่นเพื่อเก็บไว้</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Setup overlay (shows if Firebase not configured) -->
+<div class="overlay" id="setupOverlay" hidden>
+  <div class="panelbox">
+    <h2>ตั้งค่า Firebase ก่อนใช้งาน 🔧</h2>
+    <p>ต้องใส่ค่า Firebase ของคุณ (ฟรี) เพื่อให้ห้องออนไลน์เชื่อมต่อกันได้</p>
+    <ol>
+      <li>ไปที่ <code>console.firebase.google.com</code> → สร้างโปรเจกต์ใหม่ (ฟรี)</li>
+      <li>เมนู <b>Build → Realtime Database</b> → Create Database → เลือก <b>Start in test mode</b></li>
+      <li>กดไอคอน <b>&lt;/&gt;</b> (Add web app) → คัดลอกค่า <code>firebaseConfig</code></li>
+      <li>เปิดไฟล์นี้ด้วย text editor → วางค่าทั้งหมดในช่อง <code>firebaseConfig</code> ด้านบนสุดของ &lt;script&gt; (รวม <code>databaseURL</code>)</li>
+      <li>เซฟไฟล์ แล้วอัปโหลดขึ้นโฮสต์ฟรี (Netlify Drop / GitHub Pages / Firebase Hosting) แล้วแชร์ลิงก์ให้ทีม</li>
+    </ol>
+    <p class="hint">ทำครั้งเดียวจบ หลังจากนั้นทุกคนแค่เปิดลิงก์เดียวกันก็เข้าห้องได้เลย</p>
+  </div>
+</div>
+
+<!-- Join overlay -->
+<div class="overlay" id="joinOverlay" hidden>
+  <div class="panelbox">
+    <h2>เข้าห้องเปิดเพลง 🎧</h2>
+    <p>ตั้งชื่อที่จะให้คนในห้องเห็น แล้วกดเข้าห้องเพื่อเริ่มฟังพร้อมกัน</p>
+    <div class="field"><input id="nameInput" type="text" placeholder="ชื่อของคุณ เช่น พี่เทม" maxlength="20"><button class="bigbtn" id="joinBtn">เข้าห้อง</button></div>
+    <p class="hint">เพลงจะเล่นซิงก์ตรงกันทุกเครื่องในห้อง · กด WOOT เพื่อเชียร์ · MEH เพื่อโหวตข้าม</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ============================================================
+  // ใส่ค่า FIREBASE ของคุณตรงนี้ (คัดลอกมาจาก Firebase Console)
+  // ต้องเปิด Realtime Database และใส่ databaseURL ให้ครบ
+  // ============================================================
+  var firebaseConfig = {
+    apiKey: "PASTE_HERE",
+    authDomain: "PASTE_HERE",
+    databaseURL: "PASTE_HERE",
+    projectId: "PASTE_HERE",
+    appId: "PASTE_HERE"
+  };
+  // ============================================================
+
+  var $=function(id){return document.getElementById(id);};
+  var configured = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('PASTE_HERE')<0 && firebaseConfig.databaseURL && firebaseConfig.databaseURL.indexOf('PASTE_HERE')<0;
+  if(!configured){ $('setupOverlay').hidden=false; return; }
+
+  /* ---------- local storage (identity + favorites) ---------- */
+  function lsGet(k,d){ try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;} }
+  function lsSet(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+
+  /* ---------- room + identity ---------- */
+  var params=new URLSearchParams(location.search);
+  var room=(params.get('room')||'office').replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)||'office';
+  var base='rooms/'+room;
+  var uid=lsGet('djr_uid',null); if(!uid){ uid='u_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); lsSet('djr_uid',uid); }
+  var myName=lsGet('djr_name','');
+  var myColor=lsGet('djr_color',null); if(!myColor){ myColor='hsl('+Math.floor(Math.random()*360)+',80%,66%)'; lsSet('djr_color',myColor); }
+  var points=lsGet('djr_points',0);
+  var favorites=lsGet('djr_fav',[]);
+
+  /* ---------- firebase ---------- */
+  firebase.initializeApp(firebaseConfig);
+  var db=firebase.database();
+  var TS=firebase.database.ServerValue.TIMESTAMP;
+  var refPlay=db.ref(base+'/playback'), refQueue=db.ref(base+'/queue'),
+      refPres=db.ref(base+'/presence'), refChat=db.ref(base+'/chat'),
+      refReact=db.ref(base+'/reactions/current'), meRef=db.ref(base+'/presence/'+uid);
+
+  var offset=0;
+  db.ref('.info/serverTimeOffset').on('value',function(s){ offset=s.val()||0; });
+  function snow(){ return Date.now()+offset; }
+
+  /* ---------- state ---------- */
+  var joined=false, apiReady=false, player=null;
+  var pb=null, presence={}, present=[], leaderUid=null, queueArr=[];
+  var isPlaying=false, localPaused=false, volume=lsGet('djr_vol',80), prevVolume=volume;
+  var progressTimer=null, lastWoot=0, advancing=false, starting=false, lastReactKey='';
+
+  /* ---------- helpers ---------- */
+  function extractVideoId(input){
+    if(!input)return null; var s=String(input).trim();
+    if(/^[A-Za-z0-9_-]{11}$/.test(s))return s;
+    try{var u=new URL(s),h=u.hostname.replace(/^www\./,'').replace(/^m\./,'').replace(/^music\./,'');
+      if(h==='youtu.be'){var id=u.pathname.slice(1,12);if(/^[A-Za-z0-9_-]{11}$/.test(id))return id;}
+      if(h==='youtube.com'||h==='youtube-nocookie.com'){var v=u.searchParams.get('v');if(v&&/^[A-Za-z0-9_-]{11}$/.test(v))return v;var m=u.pathname.match(/\/(embed|shorts|v|live)\/([A-Za-z0-9_-]{11})/);if(m)return m[2];}
+    }catch(e){}
+    var mm=s.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/|\/v\/|\/live\/)([A-Za-z0-9_-]{11})/);return mm?mm[1]:null;
+  }
+  function fmt(sec){if(!isFinite(sec)||sec<0)sec=0;sec=Math.floor(sec);var m=Math.floor(sec/60),s=sec%60;return m+':'+String(s).padStart(2,'0');}
+  function thumb(id){return 'https://i.ytimg.com/vi/'+id+'/mqdefault.jpg';}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  var toastTimer=null;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},2400);}
+  function ICON_PLAY(){return '<svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';}
+  function ICON_PAUSE(){return '<svg viewBox="0 0 24 24" fill="#fff"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>';}
+  var ICON_VOL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>';
+  var ICON_MUTE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>';
+
+  async function fetchTitle(id){
+    try{var r=await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/watch?v='+id));if(!r.ok)return null;var j=await r.json();return j&&j.title?j.title:null;}catch(e){return null;}
+  }
+
+  /* ---------- presence + leader ---------- */
+  db.ref('.info/connected').on('value',function(s){ if(s.val()===true && joined){ meRef.onDisconnect().remove(); meRef.update({name:myName,color:myColor,joinedAt:TS,lastActive:TS}); } });
+  setInterval(function(){ if(joined) meRef.child('lastActive').set(TS); },15000);
+
+  refPres.on('value',function(s){
+    presence=s.val()||{}; recomputePresent(); renderCrowd(); updateLeader();
+  });
+  function recomputePresent(){
+    var now=snow(), arr=[];
+    for(var k in presence){ var p=presence[k]; if(!p)continue; var la=p.lastActive||p.joinedAt||0; if(typeof la!=='number')la=now; if(now-la<45000){ arr.push({uid:k,name:p.name||'ใครสักคน',color:p.color||'#aaa',joinedAt:p.joinedAt||0}); } }
+    arr.sort(function(a,b){ return a.uid<b.uid?-1:a.uid>b.uid?1:0; });
+    present=arr; $('pplCount').textContent=present.length;
+  }
+  function updateLeader(){ leaderUid=present.length?present[0].uid:null; }
+  function isLeader(){ return joined && leaderUid===uid; }
+
+  /* ---------- queue ---------- */
+  refQueue.orderByChild('ts').on('value',function(s){
+    queueArr=[]; s.forEach(function(c){ var v=c.val(); v._key=c.key; queueArr.push(v); }); renderQueue();
+    if(isLeader()) leaderKick();
+  });
+
+  /* ---------- playback ---------- */
+  refPlay.on('value',function(s){ pb=s.val(); onPlayback(); });
+  function onPlayback(){
+    // reset reactions tracking when song changes
+    var key = pb&&pb.videoId ? (pb.videoId+'_'+pb.startedAt) : '';
+    if(key!==lastReactKey){ lastReactKey=key; lastWoot=0; $('btnWoot').classList.remove('lit'); $('btnMeh').classList.remove('lit'); }
+    updateNow(); updateGrabBtn();
+    if(joined) syncToPlayback();
+  }
+
+  function syncToPlayback(){
+    if(!apiReady||!player)return;
+    if(!pb||!pb.videoId){ try{player.stopVideo();}catch(e){} isPlaying=false; setDancing(false); updatePlayBtn(); $('screenOff').style.display=''; resetNow(); return; }
+    $('screenOff').style.display='none';
+    var expected=Math.max(0,(snow()-(pb.startedAt||snow()))/1000);
+    var vd=null; try{vd=player.getVideoData();}catch(e){}
+    var loaded=vd&&vd.video_id;
+    if(loaded!==pb.videoId){
+      localPaused=false;
+      try{ player.loadVideoById({videoId:pb.videoId,startSeconds:expected}); }catch(e){}
+    } else if(!localPaused){
+      try{ var cur=player.getCurrentTime()||0; if(Math.abs(cur-expected)>2 && expected< (pb.duration||1e9)-2) player.seekTo(expected,true);
+           if(player.getPlayerState()!==1) player.playVideo(); }catch(e){}
+    }
+  }
+
+  /* ---------- leader: advance / start ---------- */
+  function leaderKick(){ if(!isLeader())return; if(!pb||!pb.videoId){ startHead(); } }
+  function buildItem(h){ return {videoId:h.id,title:h.title||'',addedBy:h.name||'',addedByUid:h.uid||'',startedAt:TS,duration:0}; }
+
+  function startHead(){
+    if(starting||!isLeader())return; starting=true;
+    refQueue.orderByChild('ts').limitToFirst(1).once('value').then(function(s){
+      var h=null,key=null; s.forEach(function(c){h=c.val();key=c.key;});
+      if(!h){ starting=false; return; }
+      var next=buildItem(h);
+      refPlay.transaction(function(cur){ if(!cur||!cur.videoId){ return next; } return; }).then(function(res){
+        starting=false;
+        if(res.committed&&res.snapshot.exists()&&res.snapshot.val().videoId===h.id){
+          refQueue.child(key).remove(); refReact.remove();
+          sysChat('▶ กำลังเล่น: '+(h.title||h.id)+' · ขอโดย '+(h.name||'ใครสักคน'));
+        }
+      }).catch(function(){starting=false;});
+    }).catch(function(){starting=false;});
+  }
+  function advance(expStart){
+    if(advancing||!isLeader())return; advancing=true;
+    refQueue.orderByChild('ts').limitToFirst(1).once('value').then(function(s){
+      var h=null,key=null; s.forEach(function(c){h=c.val();key=c.key;});
+      var next=h?buildItem(h):{videoId:null};
+      refPlay.transaction(function(cur){ if(!cur||!cur.videoId||cur.startedAt===expStart){ return next; } return; }).then(function(res){
+        advancing=false;
+        if(res.committed&&res.snapshot.exists()){
+          var val=res.snapshot.val();
+          if(h&&val.videoId===h.id){ refQueue.child(key).remove(); sysChat('▶ กำลังเล่น: '+(h.title||h.id)+' · ขอโดย '+(h.name||'ใครสักคน')); }
+          refReact.remove();
+        }
+      }).catch(function(){advancing=false;});
+    }).catch(function(){advancing=false;});
+  }
+
+  // leader tick: detect end via duration, write missing duration/title
+  setInterval(function(){
+    if(!isLeader())return;
+    if(!pb||!pb.videoId){ startHead(); return; }
+    try{
+      var vd=player&&player.getVideoData?player.getVideoData():null;
+      if(vd&&vd.video_id===pb.videoId){
+        if(!pb.duration){ var d=player.getDuration&&player.getDuration(); if(d&&d>1){ refPlay.child('duration').set(Math.floor(d)); } }
+        if(!pb.title && vd.title){ refPlay.child('title').set(vd.title); }
+      }
+    }catch(e){}
+    if(pb.duration){ var endAt=pb.startedAt+pb.duration*1000; if(snow()>=endAt+1200){ advance(pb.startedAt); } }
+  },1000);
+
+  /* ---------- reactions ---------- */
+  refReact.on('value',function(s){
+    var v=s.val()||{}; var w=v.woot?Object.keys(v.woot).length:0; var m=v.meh?Object.keys(v.meh).length:0;
+    $('wootCount').textContent=w; $('mehCount').textContent=m;
+    if(w>lastWoot){ cheer(Math.min(10,(w-lastWoot)*4+3)); } lastWoot=w;
+    // vote-skip
+    if(isLeader() && pb && pb.videoId && m>0 && m>w && m>=Math.max(2,Math.ceil(present.length/2))){ sysChat('👎 โหวตข้ามผ่าน — เปลี่ยนเพลง'); advance(pb.startedAt); }
+  });
+  function woot(){ if(!joined||!pb||!pb.videoId){toast('ยังไม่มีเพลงให้โหวต');return;} var r=refReact.child('woot/'+uid);
+    r.once('value').then(function(s){ if(s.exists()){ r.remove(); $('btnWoot').classList.remove('lit'); } else { r.set(true); $('btnWoot').classList.add('lit'); points+=2; lsSet('djr_points',points); $('points').textContent=points; } }); }
+  function meh(){ if(!joined||!pb||!pb.videoId){toast('ยังไม่มีเพลงให้โหวต');return;} var r=refReact.child('meh/'+uid);
+    r.once('value').then(function(s){ if(s.exists()){ r.remove(); $('btnMeh').classList.remove('lit'); } else { r.set(true); $('btnMeh').classList.add('lit'); } }); }
+
+  /* ---------- chat ---------- */
+  refChat.orderByChild('ts').limitToLast(80).on('child_added',function(s){ var m=s.val(); if(m) addMsgEl(m); });
+  function addMsgEl(m){
+    var d=document.createElement('div'); d.className='msg'+(m.sys?' sys':'');
+    if(m.sys){ d.textContent=m.text; } else { d.innerHTML='<span class="u" style="color:'+(m.color||'#fff')+'">'+esc(m.name||'?')+'</span>'+esc(m.text||''); }
+    var atBottom=chatEl.scrollHeight-chatEl.scrollTop-chatEl.clientHeight<50;
+    chatEl.appendChild(d); while(chatEl.children.length>120) chatEl.removeChild(chatEl.firstChild);
+    if(atBottom) chatEl.scrollTop=chatEl.scrollHeight;
+  }
+  function sendChat(){ var v=chatInput.value.trim(); if(!v||!joined)return; refChat.push({uid:uid,name:myName,color:myColor,text:v,ts:TS}); chatInput.value=''; }
+  function sysChat(text){ refChat.push({sys:true,text:text,ts:TS}); }
+
+  /* ---------- queue add / remove ---------- */
+  function addSongs(){
+    if(!joined)return; var parts=addInput.value.split(/[\s,]+/).filter(Boolean); if(parts.length===0)parts=[addInput.value];
+    var ids=[]; for(var i=0;i<parts.length;i++){var id=extractVideoId(parts[i]); if(id)ids.push(id);}
+    if(ids.length===0){ toast('ไม่พบลิงก์ YouTube ที่ถูกต้อง'); addInput.classList.remove('shake');void addInput.offsetWidth;addInput.classList.add('shake'); return; }
+    addInput.value='';
+    ids.forEach(function(id){ var ref=refQueue.push(); ref.set({id:id,title:'',name:myName,uid:uid,ts:TS});
+      fetchTitle(id).then(function(t){ if(t) ref.child('title').set(t); }); });
+    toast(ids.length>1?('ขอ '+ids.length+' เพลงแล้ว'):'ขอเพลงแล้ว');
+  }
+  function removeQ(key){ refQueue.child(key).remove(); }
+
+  /* ---------- render ---------- */
+  function renderCrowd(){
+    var djUid=pb&&pb.addedByUid; var djUser=null;
+    var others=[];
+    present.forEach(function(p){ if(p.uid===djUid&&!djUser){djUser=p;} else {others.push(p);} });
+    // booth dj
+    if(djUser){ $('djHead').style.background=djUser.color; $('djHead').style.boxShadow='0 0 12px '+djUser.color; $('djBody').style.background=djUser.color; $('djLabel').textContent='🎧 '+djUser.name; }
+    else if(pb&&pb.addedBy){ $('djLabel').textContent='🎧 '+pb.addedBy; }
+    else { $('djLabel').textContent='รอดีเจ…'; }
+    // crowd (cap render)
+    var cap=others.slice(0,70);
+    crowdEl.innerHTML=cap.map(function(p){
+      return '<div class="av" title="'+esc(p.name)+'" style="animation-duration:'+(0.75+Math.random()*0.7).toFixed(2)+'s;animation-delay:'+(-Math.random()).toFixed(2)+'s">'
+        +'<span class="head" style="width:13px;height:13px;background:'+p.color+';box-shadow:0 0 7px '+p.color+'"></span>'
+        +'<span class="body" style="width:16px;height:18px;background:'+p.color+';opacity:.9"></span></div>';
+    }).join('');
+    setDancing(isPlaying && !localPaused);
+  }
+  function setDancing(on){ crowdEl.classList.toggle('paused',!on); deckL.classList.toggle('spin',on); deckR.classList.toggle('spin',on); }
+  function cheer(n){ crowdEl.classList.add('cheer'); setTimeout(function(){crowdEl.classList.remove('cheer');},900);
+    var ems=['🔥','🙌','💜','⚡','🎉','🕺','✨'];
+    for(var i=0;i<n;i++){ (function(){ var e=document.createElement('div'); e.className='emote'; e.textContent=ems[Math.floor(Math.random()*ems.length)]; e.style.left=(8+Math.random()*84)+'%'; e.style.animationDelay=(Math.random()*.4)+'s'; e.style.fontSize=(16+Math.random()*12)+'px'; emotesEl.appendChild(e); setTimeout(function(){e.remove();},2000); })(); }
+  }
+  function renderQueue(){
+    $('qCount').textContent=queueArr.length;
+    if(queueArr.length===0){ listEl.innerHTML=''; listEl.hidden=true; $('emptyQueue').hidden=(subView!=='queue'); return; }
+    $('emptyQueue').hidden=true; if(subView==='queue') listEl.hidden=false;
+    listEl.innerHTML=queueArr.map(function(t,i){
+      var title=t.title?esc(t.title):'กำลังโหลดชื่อเพลง…';
+      return '<li class="track" data-key="'+t._key+'"><span class="num">'+(i+1)+'</span>'
+        +'<img class="thumb" src="'+thumb(t.id)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
+        +'<span class="meta"><span class="t-title">'+title+'</span><span class="t-by">ขอโดย '+esc(t.name||'ใครสักคน')+'</span></span>'
+        +'<button class="rm" data-rm="'+t._key+'" title="ลบออกจากคิว">✕</button></li>';
+    }).join('');
+  }
+  function renderFav(){
+    $('fCount').textContent=favorites.length;
+    if(favorites.length===0){ favListEl.innerHTML=''; favListEl.hidden=true; $('emptyFav').hidden=(subView!=='fav'); return; }
+    $('emptyFav').hidden=true; if(subView==='fav') favListEl.hidden=false;
+    favListEl.innerHTML=favorites.map(function(t){
+      return '<li class="track" data-fid="'+t.id+'"><span class="num">⭐</span>'
+        +'<img class="thumb" src="'+thumb(t.id)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
+        +'<span class="meta"><span class="t-title">'+(t.title?esc(t.title):t.id)+'</span></span>'
+        +'<button class="addq" data-addfav="'+t.id+'" title="ขอเพลงนี้">＋</button>'
+        +'<button class="rm" data-rmfav="'+t.id+'" title="เอาออก">✕</button></li>';
+    }).join('');
+  }
+  function updateNow(){
+    if(!pb||!pb.videoId){ resetNow(); return; }
+    npTitle.textContent=pb.title||'กำลังโหลดชื่อเพลง…';
+    npSub.textContent='ขอโดย 🎧 '+(pb.addedBy||'ใครสักคน');
+  }
+  function resetNow(){ npTitle.textContent='ยังไม่มีเพลงเล่น'; npSub.textContent='เพิ่มเพลงในคิวเพื่อเริ่มเล่น'; seekEl.value=0; seekEl.max=0; seekEl.style.setProperty('--p','0%'); curTimeEl.textContent='0:00'; durTimeEl.textContent='0:00'; }
+  function updatePlayBtn(){ $('btnPlay').innerHTML=(isPlaying&&!localPaused)?ICON_PAUSE():ICON_PLAY(); }
+  function updateVol(){ volEl.value=volume; volEl.style.setProperty('--p',volume+'%'); $('btnMute').innerHTML=volume===0?ICON_MUTE:ICON_VOL; }
+  function updateGrabBtn(){ var lit=pb&&pb.videoId&&favorites.some(function(f){return f.id===pb.videoId;}); $('btnGrab').classList.toggle('lit',!!lit); }
+
+  /* ---------- YouTube ---------- */
+  window.onYouTubeIframeAPIReady=function(){
+    player=new YT.Player('yt-player',{width:'100%',height:'100%',
+      playerVars:{controls:0,modestbranding:1,rel:0,playsinline:1,fs:0,iv_load_policy:3,origin:location.origin},
+      events:{onReady:onReady,onStateChange:onStateChange,onError:onError}});
+  };
+  function onReady(){ apiReady=true; try{player.setVolume(volume);}catch(e){} if(joined) syncToPlayback(); }
+  function onStateChange(e){
+    if(e.data===1){ isPlaying=true; localPaused=false; setDancing(true); startProgress(); updatePlayBtn(); }
+    else if(e.data===2){ isPlaying=false; if(localPaused){setDancing(false);} stopProgress(); updatePlayBtn(); }
+    else if(e.data===0){ stopProgress(); if(isLeader()&&pb){ points+=0; advance(pb.startedAt); } }
+    else if(e.data===5){ updateDur(); }
+  }
+  function onError(){ if(isLeader()&&pb){ sysChat('⚠ เพลงก่อนหน้าเล่นไม่ได้ ข้ามให้'); advance(pb.startedAt); } }
+  function updateDur(){ try{var d=player.getDuration()||0; seekEl.max=d; durTimeEl.textContent=fmt(d);}catch(e){} }
+  function startProgress(){ stopProgress(); progressTimer=setInterval(function(){ try{var cur=player.getCurrentTime()||0,dur=player.getDuration()||0; seekEl.max=dur||0; seekEl.value=cur; curTimeEl.textContent=fmt(cur); durTimeEl.textContent=fmt(dur); seekEl.style.setProperty('--p',(dur>0?(cur/dur*100):0)+'%'); }catch(e){} },500); }
+  function stopProgress(){ if(progressTimer){clearInterval(progressTimer);progressTimer=null;} }
+  // periodic drift resync (followers)
+  setInterval(function(){ if(joined&&!localPaused&&pb&&pb.videoId&&apiReady){ try{ var vd=player.getVideoData(); if(vd&&vd.video_id===pb.videoId){ var expected=(snow()-pb.startedAt)/1000; var cur=player.getCurrentTime()||0; if(expected>0 && Math.abs(cur-expected)>2.2 && (!pb.duration||expected<pb.duration-2)) player.seekTo(expected,true); } }catch(e){} } },6000);
+
+  /* ---------- local transport ---------- */
+  function togglePlay(){
+    if(!joined)return; if(!pb||!pb.videoId){toast('ยังไม่มีเพลงเล่น');return;}
+    if(localPaused || (player&&player.getPlayerState&&player.getPlayerState()!==1)){ localPaused=false; syncToPlayback(); }
+    else { localPaused=true; try{player.pauseVideo();}catch(e){} }
+  }
+
+  /* ---------- tabs ---------- */
+  function switchTab(name){ document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===name);}); $('pane-chat').hidden=(name!=='chat'); $('pane-list').hidden=(name!=='list'); if(name==='chat')chatEl.scrollTop=chatEl.scrollHeight; }
+  var subView='queue';
+  function switchSub(name){ subView=name; document.querySelectorAll('.subtab').forEach(function(t){t.classList.toggle('active',t.dataset.sub===name);}); if(name==='queue'){favListEl.hidden=true;$('emptyFav').hidden=true;renderQueue();} else {listEl.hidden=true;$('emptyQueue').hidden=true;renderFav();} }
+
+  /* ---------- elements + events ---------- */
+  var chatEl=$('chat'),crowdEl=$('crowd'),emotesEl=$('emotes'),seekEl=$('seek'),volEl=$('vol'),
+      listEl=$('list'),favListEl=$('favList'),npTitle=$('npTitle'),npSub=$('npSub'),
+      curTimeEl=$('curTime'),durTimeEl=$('durTime'),addInput=$('addInput'),chatInput=$('chatInput'),
+      deckL=$('deckL'),deckR=$('deckR');
+
+  $('btnAdd').addEventListener('click',addSongs);
+  addInput.addEventListener('keydown',function(e){if(e.key==='Enter')addSongs();});
+  $('btnWoot').addEventListener('click',woot);
+  $('btnMeh').addEventListener('click',meh);
+  $('btnGrab').addEventListener('click',function(){ if(!pb||!pb.videoId){toast('ยังไม่มีเพลงให้บันทึก');return;} var k=favorites.findIndex(function(f){return f.id===pb.videoId;}); if(k>=0){favorites.splice(k,1);toast('เอาออกจากที่บันทึกแล้ว');} else {favorites.push({id:pb.videoId,title:pb.title||''});toast('⭐ บันทึกแล้ว');} lsSet('djr_fav',favorites); updateGrabBtn(); renderFav(); });
+  $('btnPlay').addEventListener('click',togglePlay);
+  $('btnMute').addEventListener('click',function(){ if(volume>0){prevVolume=volume;volume=0;}else{volume=prevVolume||60;} try{player.setVolume(volume);}catch(e){} lsSet('djr_vol',volume); updateVol(); });
+  volEl.addEventListener('input',function(){ volume=+volEl.value; try{player.setVolume(volume);}catch(e){} updateVol(); });
+  volEl.addEventListener('change',function(){ lsSet('djr_vol',volume); });
+  document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){switchTab(t.dataset.tab);});});
+  document.querySelectorAll('.subtab').forEach(function(t){t.addEventListener('click',function(){switchSub(t.dataset.sub);});});
+  listEl.addEventListener('click',function(e){ var rm=e.target.closest('[data-rm]'); if(rm){removeQ(rm.getAttribute('data-rm'));} });
+  favListEl.addEventListener('click',function(e){
+    var add=e.target.closest('[data-addfav]'); if(add){ if(!joined){toast('เข้าห้องก่อนนะ');return;} var id=add.getAttribute('data-addfav'); var f=favorites.find(function(x){return x.id===id;}); var ref=refQueue.push(); ref.set({id:id,title:f?f.title:'',name:myName,uid:uid,ts:TS}); if(f&&!f.title){fetchTitle(id).then(function(t){if(t)ref.child('title').set(t);});} toast('ขอเพลงนี้แล้ว'); return; }
+    var rmf=e.target.closest('[data-rmfav]'); if(rmf){ var rid=rmf.getAttribute('data-rmfav'); favorites=favorites.filter(function(x){return x.id!==rid;}); lsSet('djr_fav',favorites); updateGrabBtn(); renderFav(); }
+  });
+  $('chatSend').addEventListener('click',sendChat);
+  chatInput.addEventListener('keydown',function(e){if(e.key==='Enter')sendChat();});
+  $('handleChip').addEventListener('click',function(){ var n=prompt('ตั้งชื่อของคุณ:',myName); if(n&&n.trim()){ myName=n.trim().slice(0,20); lsSet('djr_name',myName); $('djName').textContent=myName; if(joined) meRef.child('name').set(myName); } });
+  $('copyLink').addEventListener('click',function(){ var url=location.origin+location.pathname+'?room='+room; try{navigator.clipboard.writeText(url);toast('คัดลอกลิงก์ห้องแล้ว ส่งให้เพื่อนได้เลย');}catch(e){ prompt('คัดลอกลิงก์นี้:',url); } });
+  document.addEventListener('keydown',function(e){ if(e.target===addInput||e.target===chatInput||e.target===$('nameInput'))return; if(e.code==='Space'){e.preventDefault();togglePlay();} else if(e.key.toLowerCase()==='w'){woot();} });
+
+  /* ---------- join ---------- */
+  function doJoin(){
+    var n=$('nameInput').value.trim(); if(!n){ $('nameInput').focus(); $('nameInput').placeholder='ใส่ชื่อก่อนนะ…'; return; }
+    myName=n.slice(0,20); lsSet('djr_name',myName); $('djName').textContent=myName;
+    joined=true; $('joinOverlay').hidden=true;
+    meRef.onDisconnect().remove(); meRef.set({name:myName,color:myColor,joinedAt:TS,lastActive:TS});
+    sysChat('👋 '+myName+' เข้าห้องแล้ว');
+    // start the YouTube player synced (user gesture allows audio)
+    if(apiReady){ try{player.playVideo();}catch(e){} syncToPlayback(); }
+    switchTab('chat');
+  }
+  $('joinBtn').addEventListener('click',doJoin);
+  $('nameInput').addEventListener('keydown',function(e){if(e.key==='Enter')doJoin();});
+
+  /* ---------- init ---------- */
+  $('djName').textContent=myName||'You';
+  $('points').textContent=points;
+  $('roomName').textContent='ห้อง: '+room;
+  updateVol(); renderFav();
+  if(myName) $('nameInput') && ($('nameInput').value=myName);
+  $('joinOverlay').hidden=false;
+
+  // load YouTube API
+  var tag=document.createElement('script'); tag.src='https://www.youtube.com/iframe_api';
+  var first=document.getElementsByTagName('script')[0]; first.parentNode.insertBefore(tag,first);
+})();
+</script>
+</body>
+</html>
